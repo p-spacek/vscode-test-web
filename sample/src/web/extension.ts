@@ -4,11 +4,15 @@ import * as vscode from 'vscode';
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
-export function activate(context: vscode.ExtensionContext) {
-
+export async function activate(context: vscode.ExtensionContext) {
 	// Use the console to output diagnostic information (console.log) and errors (console.error)
 	// This line of code will only be executed once when your extension is activated
 	console.log('Congratulations, your extension "vscode-test-web-sample" is now active in the web extension host!');
+
+	const uri1 = vscode.Uri.file(context.asAbsolutePath('assets/asset.txt'));
+	await readFile(uri1);
+	const uri2 = vscode.Uri.joinPath(context.extensionUri, 'assets/asset.txt');
+	await readFile(uri2);
 
 	// The command has been defined in the package.json file
 	// Now provide the implementation of the command with registerCommand
@@ -23,7 +27,8 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(disposable);
 
 	let findFilesDisposable = vscode.commands.registerCommand('vscode-test-web-sample.findFiles', () => {
-		vscode.window.showInputBox({ title: 'Enter a pattern', placeHolder: '**/*.md' })
+		vscode.window
+			.showInputBox({ title: 'Enter a pattern', placeHolder: '**/*.md' })
 			.then((pattern) => {
 				return pattern ? vscode.workspace.findFiles(pattern) : undefined;
 			})
@@ -31,14 +36,25 @@ export function activate(context: vscode.ExtensionContext) {
 				if (!results) {
 					return vscode.window.showErrorMessage('Find files returned undefined');
 				}
-				let summary = `Found:\n${results.map(uri => `  - ${uri.path}`).join('\n')}`;
+				let summary = `Found:\n${results.map((uri) => `  - ${uri.path}`).join('\n')}`;
 				return vscode.window.showInformationMessage(summary);
 			});
 	});
 
 	context.subscriptions.push(findFilesDisposable);
-
 }
 
 // this method is called when your extension is deactivated
-export function deactivate() { }
+export function deactivate() {}
+
+async function readFile(uri: vscode.Uri) {
+	try {
+		console.log('TEST: Reading file', uri);
+		const file = await vscode.workspace.fs.readFile(uri);
+		const decoder = new TextDecoder('utf-8');
+		const fileContent = decoder.decode(file);
+		console.log('TEST: File', uri, fileContent);
+	} catch (e) {
+		console.error('TEST: Failed to read file', uri, e);
+	}
+}
